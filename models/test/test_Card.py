@@ -21,6 +21,9 @@ class TestCard(unittest.TestCase):
     self.assertRaises(ValueError, Card, value='999', symbol='Heart')
     self.assertRaises(ValueError, Card, value='1', symbol='Heart')
 
+    with self.assertRaises(ValueError):
+      self.assertEqual(Card('B', 'Heart').value, 11)
+
   def test_add(self):
     """
     Testing the adding of cards
