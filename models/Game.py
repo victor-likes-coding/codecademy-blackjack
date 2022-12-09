@@ -80,22 +80,45 @@ class Card(Base):
     if self.is_ace_card and self.value == 11:
       self.face_value['A'] = 1
 
-
-class Hand(Base):
-  def __init__(self, *cards: (Card)):
-    super().__init__('Hand')
+class CardCollection(Base):
+  def __init__(self, name, *cards: (Card), limit=5):
     if not all([type(card) is Card for card in cards]):
-      # for card in cards:
-        # print(f'Type should be Card, Type: {type(card)}')
+      raise TypeError(f'Expected all elements passed into constructor to be of type {type(Card)}')
+    super().__init__(name)
+    if len(cards) > limit:
+      raise SyntaxError(f'Unexpected size of hand cannot exceed {limit}.')
+    self.__cards = [card for card in cards]
+    self.__limit = limit
+
+  def __len__(self):
+    return len(self.__cards)
+
+  def __iter__(self):
+    return self.__cards
+
+  def __getitem__(self, index):
+    return self.__cards[index]
+
+  @property
+  def cards(self):
+    return self.__cards
+
+  @cards.setter
+  def cards(self, other):
+    if not all([type(card) is Card for card in other]):
       raise TypeError(f'Expected all elements passed into constructor to be of type {type(Card)}')
 
-    if len(cards) > 5:
-      raise SyntaxError('Unexpected size of hand cannot exceed 5.')
-    self.__cards = [card for card in cards]
-    self.__has_ace = any([card.value == 1 or card.value == 11 for card in self.__cards])
-    self.__aces = [card for card in self.__cards if card.value == 11]
+    if len(other) > self.__limit:
+      raise SyntaxError(f'Unexpected size of hand cannot exceed {self.__limit}.')
+    self.__cards = other
 
-    self.__value = sum([card.value for card in self.__cards])
+class Hand(CardCollection):
+  def __init__(self, *cards: (Card)):
+    super().__init__('Hand', *cards)
+    self.__has_ace = any([card.value == 1 or card.value == 11 for card in super().cards])
+    self.__aces = [card for card in super().cards if card.value == 11]
+
+    self.__value = sum([card.value for card in super().cards])
 
     if self.will_require_update():
       self.update_aces()
@@ -116,41 +139,41 @@ class Hand(Base):
     if type(other) is not Card:
       raise TypeError(f'Does not support `+` operations using type {type(other)} and type {type(self)}. ')
 
-    hand = Hand(*self.__cards, other)
+    hand = Hand(*super().cards, other)
 
     # if the hand's value is over 21 and there's an ace in the hand
     if hand.will_require_update():
       hand.update_aces()
     return hand
 
-  def __len__(self):
-    return len(self.__cards)
-
   def __iadd__(self, card: Card):
     if not type(card) is Card:
       raise TypeError(f'Cannot add type {type(card)} to type Hand, must be a Card type')
 
-    return Hand(*self.__cards, card)
+    return Hand(*super().cards, card)
 
   def __eq__(self, other: int) -> bool:
     return self.__value == other
 
-  def __iter__(self):
-    return self.__cards
-
-  def __getitem__(self, index):
-    return self.__cards[index]
-
   def __repr__(self):
-    return f'Hand({[f"{card}" for card in self.__cards]})'
+    return f'Hand({[f"{card}" for card in super().cards]})'
 
   def update(self) -> None:
-    self.__value = sum([card.value for card in self.__cards])
+    """
+    Updates the .__value property of this Hand by summing the individual card values
+    """
+    self.__value = sum([card.value for card in super().cards])
 
   def will_require_update(self):
-      return self.value > 21 and self.has_ace
+    """
+    Determines whether hand will need to update itself
+    """
+    return self.value > 21 and self.has_ace
 
   def update_aces(self):
+    """
+    Goes through the aces list and updates the aces to 1 until the value of the hand is less than 21
+    """
     for index in range(len(self.aces)):
       card = self.aces.pop(index)
       card.becomes_one()
