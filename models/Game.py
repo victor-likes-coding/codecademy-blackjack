@@ -180,4 +180,55 @@ class Hand(CardCollection):
       self.update()
       if self.value < 21:
         break
-    self.update()
+
+class Deck(CardCollection):
+  def __init__(self, *cards):
+    super().__init__('Deck', *cards, limit=52)
+
+  def shuffle(self):
+    """
+    Shuffles the deck in place
+
+    Args: None
+
+    Returns:
+      Self@Deck: A Deck object
+
+    """
+    random.shuffle(super().cards)
+    return self
+
+  def cut(self, method: int=2):
+    """
+    Cuts the deck either by 1/4 on top, 1/2 on top or 3/4 on top
+
+    Args:
+      method: int
+
+    Returns:
+      Self@Deck: A Deck object
+
+    """
+    if method > 3 or method < 0:
+      raise ValueError(f'Must use 1 - 3, but got {method}')
+
+    # slices in place
+    self.cards[:] = self.cards[method * len(self.cards)//4:] + self.cards[:len(self.cards)//4]
+    return self
+
+  def draw(self):
+    """
+    Deck deals/returns the first card in the Deck
+
+    Args: None
+
+    Returns:
+      Card: A Card object representing a card
+
+    """
+
+    return self.cards.pop(0)
+
+  def __str__(self):
+    return ', '.join([str(card) for card in super().cards])
+
